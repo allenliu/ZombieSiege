@@ -1,0 +1,11 @@
+name: ZombieSiege
+main: zombiesiege.ZombieSiege
+version: 0.1
+author: allenliu
+commands:
+    start:
+        description: Start a new game
+        usage: /<command>
+    end:
+        description: End a game
+        usage: /<command>
