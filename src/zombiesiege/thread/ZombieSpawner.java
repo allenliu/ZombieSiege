@@ -10,7 +10,7 @@ import zombiesiege.ZombieSiegeGame;
 
 public class ZombieSpawner extends Thread {
     
-    private static final int SPAWN_RADIUS = 30;
+    private static final int SPAWN_RADIUS = 60;
     
     private final ZombieSiegeGame game;
     private final Random r = new Random();
@@ -21,6 +21,9 @@ public class ZombieSpawner extends Thread {
     
     @Override
     public void run() {
+        if (game.isDay) {
+            return;
+        }
         Location spawnCenter = game.getBase();
         for (int i = 0; i < 10; i ++) {
             int theta = r.nextInt(360);
@@ -29,6 +32,14 @@ public class ZombieSpawner extends Thread {
             double y = game.getWorld().getHighestBlockYAt((int) x, (int) z);
             Location spawn = new Location(game.getWorld(), x, y, z);
             game.getWorld().spawnCreature(spawn, CreatureType.ZOMBIE);
+        }
+        if (r.nextDouble() > 0.3) {
+            int theta = r.nextInt(360);
+            double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
+            double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
+            double y = game.getWorld().getHighestBlockYAt((int) x, (int) z);
+            Location spawn = new Location(game.getWorld(), x, y, z);
+            game.getWorld().spawnCreature(spawn, CreatureType.GIANT);
         }
     }
 
