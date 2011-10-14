@@ -8,10 +8,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Zombie;
+import org.bukkit.entity.Projectile;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -36,6 +36,12 @@ public class ZombieSiegeGame {
     
     public boolean isDay = true;
     public int dayNum = 0;
+    public boolean firstMessage = false;
+    
+    public boolean zombieBlockBreak = false;
+    public boolean zombieFireArrow = false;
+    public boolean zombieExplosion = false;
+    public boolean zombieGiant = false;
     
     private final Random r = new Random();
     
@@ -49,24 +55,18 @@ public class ZombieSiegeGame {
         
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieSpawner(this), 0, 400L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieController(this), 0, 20L);
-        instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 300L);
+        instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
         
-        /*for (Player p1 : world.getPlayers()) {
-            world.spawnCreature(p1.getLocation(), CreatureType.GIANT);
-            for (LivingEntity e : world.getLivingEntities()) {
-                if (e instanceof Monster) {
-                    Monster m = (Monster) e;
-                    m.setTarget(p);
-                }
-            }
-        }*/
-        sendDayMessage();
+        sendWelcomeMessage();
     }
     
     public void endGame() {
+        sendMessageToAll("The current ZombieSiege session has been ended.");
         instance.getServer().getScheduler().cancelAllTasks();
-        for (Monster m : horde) {
-            m.setHealth(0);
+        for (Entity entity : world.getEntities()) {
+            if ((entity instanceof Monster) || (entity instanceof Projectile)) {
+                entity.remove();
+            }
         }
     }
     
@@ -83,8 +83,8 @@ public class ZombieSiegeGame {
         world.setPVP(true);
         world.setTime(0L);
         world.setSpawnLocation(base.getBlockX(), base.getBlockY(), base.getBlockZ());
-        for (LivingEntity entity : world.getLivingEntities()) {
-            if ((entity instanceof Monster) && !(entity instanceof Zombie)) {
+        for (Entity entity : world.getEntities()) {
+            if ((entity instanceof Monster) || (entity instanceof Projectile)) {
                 entity.remove();
             }
         }
@@ -96,6 +96,7 @@ public class ZombieSiegeGame {
     
     private void setupPlayers() {
         for (Player p : world.getPlayers()) {
+            p.leaveVehicle();
             p.teleport(base.add(0, 1, 0));
             p.setHealth(20);
             p.setFoodLevel(20);
@@ -118,15 +119,22 @@ public class ZombieSiegeGame {
         }
     }
     
+    public void sendWelcomeMessage() {
+        sendMessageToAll(ChatColor.DARK_GREEN + "Z O M B I E  " + ChatColor.DARK_AQUA + "S I E G E  " + ChatColor.DARK_BLUE + "1.0");
+        sendMessageToAll("Survive five nights of zombie mayhem!");
+        sendMessageToAll("You each get one (maybe not so useful) tool to start with!");
+        sendMessageToAll("You have until nightfall to prepare yourselves.");
+    }
+    
     public void sendDayMessage() {
         switch (dayNum) {
         case 0:
-            sendMessageToAll(ChatColor.DARK_GREEN + "Z O M B I E  " + ChatColor.DARK_AQUA + "S I E G E   " + ChatColor.DARK_BLUE + "1.0");
             sendMessageToAll("Dawn of day 0:");
-            sendMessageToAll("You have until nightfall to prepare yourselves.");
+            sendMessageToAll("Start a mine, build a wall, farm for food.");
             break;
         case 1:
             sendMessageToAll("Dawn of day 1:");
+            sendMessageToAll("");
             break;
         case 2:
             sendMessageToAll("Dawn of day 2:");
@@ -141,7 +149,47 @@ public class ZombieSiegeGame {
     }
     
     public void sendNightMessage() {
-        sendMessageToAll("Zombies will spawn now.");
+        switch (dayNum) {
+        case 0:
+            sendMessageToAll("Dusk of day 0:");
+            sendMessageToAll("There are reports of an unusually high number of zombies about.");
+            break;
+        case 1:
+            sendMessageToAll("Dusk of day 1:");
+            sendMessageToAll("The zombies are becoming more aggressive!");
+            break;
+        case 2:
+            sendMessageToAll("Dusk of day 2:");
+            sendMessageToAll("Run for cover! The zombies seem to have brought weapons of their own!");
+            break;
+        case 3:
+            sendMessageToAll("Dusk of day 3:");
+            sendMessageToAll("Something in the water seems to be making the zombies more volatile...");
+            break;
+        case 4:
+            sendMessageToAll("Dusk of last day:");
+            sendMessageToAll("Be very, very afraid.");
+            break;
+        }
+    }
+    
+    public void enableZombieBehavior() {
+        switch (dayNum) {
+        case 0:
+            break;
+        case 1:
+            zombieBlockBreak = true;
+            break;
+        case 2:
+            zombieFireArrow = true;
+            break;
+        case 3:
+            zombieExplosion = true;
+            break;
+        case 4:
+            zombieGiant = true;
+            break;
+        }
     }
     
     private void equip(Player p) {

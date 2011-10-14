@@ -33,13 +33,15 @@ public class ZombieSpawner extends Thread {
             Location spawn = new Location(game.getWorld(), x, y, z);
             game.getWorld().spawnCreature(spawn, CreatureType.ZOMBIE);
         }
-        if (r.nextDouble() > 0.3) {
-            int theta = r.nextInt(360);
-            double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
-            double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
-            double y = game.getWorld().getHighestBlockYAt((int) x, (int) z);
-            Location spawn = new Location(game.getWorld(), x, y, z);
-            game.getWorld().spawnCreature(spawn, CreatureType.GIANT);
+        if (game.zombieGiant) {
+            if (r.nextDouble() > 0.3) {
+                int theta = r.nextInt(360);
+                double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
+                double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
+                double y = game.getWorld().getHighestBlockYAt((int) x, (int) z);
+                Location spawn = new Location(game.getWorld(), x, y, z);
+                game.getWorld().spawnCreature(spawn, CreatureType.GIANT);
+            }
         }
     }
 

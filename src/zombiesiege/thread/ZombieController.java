@@ -1,6 +1,10 @@
 package zombiesiege.thread;
 
+import java.util.List;
+
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Giant;
 import org.bukkit.entity.LivingEntity;
@@ -13,8 +17,10 @@ import zombiesiege.ZombieSiegeGame;
 public class ZombieController extends Thread {
 
     private static final int FORGET_DISTANCE = 15;
+    private static final int FIREBALL_DISTANCE = 30;
 
     private final ZombieSiegeGame game;
+    private int tick = 0;
 
     public ZombieController(ZombieSiegeGame game) {
         this.game = game;
@@ -22,30 +28,42 @@ public class ZombieController extends Thread {
 
     @Override
     public void run() {
+        tick++;
         for (Monster m : game.horde) {
             LivingEntity t = m.getTarget();
             if (t == null) {
                 Vector v = game.getBase().toVector().subtract(m.getLocation().toVector());
-                m.setVelocity(v.normalize().multiply(0.3));
+                m.setVelocity(v.normalize().multiply(0.4));
             } else if (t.getLocation().distance(m.getLocation()) > FORGET_DISTANCE) {
                 Vector v = t.getLocation().toVector().subtract(m.getLocation().toVector());
-                m.setVelocity(v.normalize().multiply(0.3));
-                if (m instanceof Giant) {
-                    Location from = m.getEyeLocation().add(0, 8, 0);
-                    from = getOffset(from, t.getLocation());
-                    from = lookAt(from, t.getLocation());
-                    m.getWorld().spawn(from, Fireball.class);
+                m.setVelocity(v.normalize().multiply(0.4));
+            }
+            if (m instanceof Giant) {
+                if (t != null && t.getLocation().distance(m.getLocation()) < FIREBALL_DISTANCE) {
+                    if ((m.hashCode() + tick) % 5 == 0) {
+                        Location from = m.getEyeLocation().add(0, 8, 0);
+                        from = getOffset(from, t.getLocation());
+                        from = lookAt(from, t.getLocation());
+                        m.getWorld().spawn(from, Fireball.class);
+                    }
                 }
-                continue;
-            } else if (m instanceof Zombie) {
-                m.shootArrow();
-            } else if (m instanceof Giant) {
-                Location from = m.getEyeLocation().add(0, 8, 0);
-                from = getOffset(from, t.getLocation());
-                from = lookAt(from, t.getLocation());
-                m.getWorld().spawn(from, Fireball.class);
-                //Location l = m.getEyeLocation().toVector().add(m.getLocation().getDirection().multiply(2)).toLocation(m.getWorld(), m.getLocation().getYaw(), m.getLocation().getPitch());
-                //Fireball fireball = m.getWorld().spawn(l, Fireball.class);
+            }
+            if (m instanceof Zombie) {
+                if (game.zombieBlockBreak) {
+                    if ((m.hashCode() + tick) % 25 == 0) {
+                        List<Block> l = m.getLineOfSight(null, 3);
+                        for (Block b : l) {
+                            if (b.getType() != Material.OBSIDIAN && b.getType() != Material.BRICK) {
+                                b.setType(Material.AIR);
+                            }
+                        }
+                    }
+                }
+                if (game.zombieFireArrow) {
+                    if ((m.hashCode() + tick) % 15 == 0) {
+                        m.shootArrow();
+                    }
+                }
             }
         }
     }
@@ -57,7 +75,7 @@ public class ZombieController extends Thread {
         loc.setZ(loc.getZ() + v.getZ());
         return loc;
     }
-    
+
     // bergerkiller of Bukkit forums
     // http://forums.bukkit.org/threads/summoning-a-fireball.40724/
     public Location lookAt(Location loc, Location lookat) {   

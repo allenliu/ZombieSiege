@@ -9,6 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import zombiesiege.listener.ZombieSiegeCommandExecutor;
 import zombiesiege.listener.ZombieSiegeEntityListener;
+import zombiesiege.listener.ZombieSiegePlayerListener;
 import zombiesiege.listener.ZombieSiegeWorldListener;
 
 public class ZombieSiege extends JavaPlugin {
@@ -16,7 +17,7 @@ public class ZombieSiege extends JavaPlugin {
     private final static String VERSION = "0.1";
     
     private final ZombieSiegeCommandExecutor commandExecutor = new ZombieSiegeCommandExecutor(this);
-    //private final ZombieSiegePlayerListener playerListener = new ZombieSiegePlayerListener(this);
+    private final ZombieSiegePlayerListener playerListener = new ZombieSiegePlayerListener(this);
     private final ZombieSiegeEntityListener entityListener = new ZombieSiegeEntityListener(this);
     //private final ZombieSiegeBlockListener blockListener = new ZombieSiegeBlockListener(this);
     private final ZombieSiegeWorldListener worldListener = new ZombieSiegeWorldListener(this);
@@ -40,6 +41,7 @@ public class ZombieSiege extends JavaPlugin {
 
     private void registerEvents() {
         PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvent(Event.Type.PLAYER_BED_ENTER, playerListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.CREATURE_SPAWN, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_DEATH, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_TARGET, entityListener, Event.Priority.Normal, this);
