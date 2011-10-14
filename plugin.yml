@@ -1,6 +1,6 @@
 name: ZombieSiege
 main: zombiesiege.ZombieSiege
-version: 0.1
+version: 1.0
 author: allenliu
 commands:
     start:
@@ -9,3 +9,9 @@ commands:
     end:
         description: End a game
         usage: /<command>
+    stats:
+        description: View game statistics
+        usage: /<command>      
+    debug:
+        description: For debugging only
+        usage: /<command>  

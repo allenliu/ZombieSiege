@@ -1,5 +1,9 @@
 package zombiesiege.thread;
 
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Monster;
+import org.bukkit.entity.Projectile;
+
 import zombiesiege.ZombieSiegeGame;
 
 public class TimeController extends Thread {
@@ -20,6 +24,11 @@ public class TimeController extends Thread {
         }
         if (game.isDay && 13000L < time) {
             game.isDay = false;
+            for (Entity entity : game.getWorld().getEntities()) {
+                if ((entity instanceof Monster) || (entity instanceof Projectile)) {
+                    entity.remove();
+                }
+            }
             game.enableZombieBehavior();
             game.sendNightMessage();
             return;

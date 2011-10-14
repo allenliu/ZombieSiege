@@ -14,7 +14,7 @@ import zombiesiege.listener.ZombieSiegeWorldListener;
 
 public class ZombieSiege extends JavaPlugin {
 
-    private final static String VERSION = "0.1";
+    private final static String VERSION = "1.0";
     
     private final ZombieSiegeCommandExecutor commandExecutor = new ZombieSiegeCommandExecutor(this);
     private final ZombieSiegePlayerListener playerListener = new ZombieSiegePlayerListener(this);
@@ -36,12 +36,16 @@ public class ZombieSiege extends JavaPlugin {
         log.info("ZombieSiege " + VERSION + " enabled.");
         getCommand("start").setExecutor(commandExecutor);
         getCommand("end").setExecutor(commandExecutor);
+        getCommand("stats").setExecutor(commandExecutor);
+        getCommand("debug").setExecutor(commandExecutor);
         registerEvents();
     }
 
     private void registerEvents() {
         PluginManager pluginManager = getServer().getPluginManager();
+        pluginManager.registerEvent(Event.Type.PLAYER_RESPAWN, playerListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.PLAYER_BED_ENTER, playerListener, Event.Priority.Normal, this);
+        pluginManager.registerEvent(Event.Type.PLAYER_PORTAL, playerListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.CREATURE_SPAWN, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_DEATH, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_TARGET, entityListener, Event.Priority.Normal, this);

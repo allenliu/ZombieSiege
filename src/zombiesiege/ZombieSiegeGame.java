@@ -1,13 +1,18 @@
 package zombiesiege;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
@@ -29,22 +34,27 @@ public class ZombieSiegeGame {
         Material.DIAMOND_SPADE, Material.DIAMOND_HOE, Material.DIAMOND_SWORD, Material.DIAMOND_AXE, Material.DIAMOND_PICKAXE
     };
     
+    private final Comparator<Player> playerComparator = new PlayerComparator();
+
     private final ZombieSiege instance;
     private final World world;
     private final Location base;
+    private final Map<String, Integer> playerKills = new HashMap<String, Integer>();
+    private final Map<String, Integer> playerDeaths = new HashMap<String, Integer>();
     public List<Monster> horde = new ArrayList<Monster>();
-    
+
+
     public boolean isDay = true;
     public int dayNum = 0;
     public boolean firstMessage = false;
-    
+
     public boolean zombieBlockBreak = false;
     public boolean zombieFireArrow = false;
     public boolean zombieExplosion = false;
     public boolean zombieGiant = false;
-    
+
     private final Random r = new Random();
-    
+
     public ZombieSiegeGame(ZombieSiege instance, Player p) {
         this.instance = instance;
         world = p.getWorld();
@@ -52,14 +62,14 @@ public class ZombieSiegeGame {
         setupWorld();
         setupBase();
         setupPlayers();
-        
+
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieSpawner(this), 0, 400L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieController(this), 0, 20L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
-        
+
         sendWelcomeMessage();
     }
-    
+
     public void endGame() {
         sendMessageToAll("The current ZombieSiege session has been ended.");
         instance.getServer().getScheduler().cancelAllTasks();
@@ -69,15 +79,15 @@ public class ZombieSiegeGame {
             }
         }
     }
-    
+
     public World getWorld() {
         return world;
     }
-    
+
     public Location getBase() {
         return base;
     }
-    
+
     private void setupWorld() {
         world.setSpawnFlags(true, true);
         world.setPVP(true);
@@ -89,11 +99,11 @@ public class ZombieSiegeGame {
             }
         }
     }
-    
+
     private void setupBase() {
         base.add(new Location(world, 0, -1, 0)).getBlock().setType(Material.OBSIDIAN);
     }
-    
+
     private void setupPlayers() {
         for (Player p : world.getPlayers()) {
             p.leaveVehicle();
@@ -104,28 +114,28 @@ public class ZombieSiegeGame {
             equip(p);
         }
     }
-    
+
     public void registerMonster(Monster m) {
         horde.add(m);
     }
-    
+
     public void unregisterMonster(Monster m) {
         horde.remove(m);
     }
-    
+
     public void sendMessageToAll(String m) {
         for (Player p : world.getPlayers()) {
             p.sendMessage(m);
         }
     }
-    
+
     public void sendWelcomeMessage() {
         sendMessageToAll(ChatColor.DARK_GREEN + "Z O M B I E  " + ChatColor.DARK_AQUA + "S I E G E  " + ChatColor.DARK_BLUE + "1.0");
         sendMessageToAll("Survive five nights of zombie mayhem!");
         sendMessageToAll("You each get one (maybe not so useful) tool to start with!");
         sendMessageToAll("You have until nightfall to prepare yourselves.");
     }
-    
+
     public void sendDayMessage() {
         switch (dayNum) {
         case 0:
@@ -147,7 +157,7 @@ public class ZombieSiegeGame {
             break;
         }
     }
-    
+
     public void sendNightMessage() {
         switch (dayNum) {
         case 0:
@@ -172,7 +182,17 @@ public class ZombieSiegeGame {
             break;
         }
     }
-    
+
+    public void sendStats(CommandSender s) {
+        s.sendMessage(ChatColor.LIGHT_PURPLE + padRight("Statistics", 15) + padRight("Kills", 10) + "Deaths");
+        List<Player> l = world.getPlayers();
+        Collections.sort(l, playerComparator);
+        for (Player p : l) {
+            String name = p.getName();
+            s.sendMessage(padRight(name, 15) + padRight(playerKills.get(name).toString(), 10) + playerDeaths.get(name));
+        }
+    }
+
     public void enableZombieBehavior() {
         switch (dayNum) {
         case 0:
@@ -191,10 +211,58 @@ public class ZombieSiegeGame {
             break;
         }
     }
-    
+
+    public void addKill(Player p) {
+        String name = p.getName();
+        if (playerKills.containsKey(name)) {
+            playerKills.put(name, playerKills.get(name) + 1);
+        } else {
+            playerKills.put(name, 1);
+        }
+    }
+
+    public void addDeath(Player p) {
+        String name = p.getName();
+        if (playerDeaths.containsKey(name)) {
+            playerDeaths.put(name, playerDeaths.get(name) + 1);
+        } else {
+            playerDeaths.put(name, 1);
+        }
+    }
+
     private void equip(Player p) {
         Inventory i = p.getInventory();
         i.clear();
         p.setItemInHand(new ItemStack(EQUIPABLES[r.nextInt(EQUIPABLES.length)], 1));
+    }
+
+    private static String padRight(String s, int n) {
+        return String.format("%1$-" + n + "s", s);  
+    }
+
+    private static String padLeft(String s, int n) {
+        return String.format("%1$#" + n + "s", s);  
+    }
+    
+    public final class PlayerComparator implements Comparator<Player> {
+
+        @Override
+        public int compare(Player p1, Player p2) {
+            int p1kills;
+            int p2kills;
+            if (playerKills.containsKey(p1)) {
+                p1kills = playerKills.get(p1);
+            } else {
+                p1kills = 0;
+                playerKills.put(p1.getName(), 0);
+            }
+            if (playerKills.containsKey(p2)) {
+                p2kills = playerKills.get(p2);
+            } else {
+                p2kills = 0;
+                playerKills.put(p2.getName(), 0);
+            }
+            return p1kills - p2kills;
+        }
     }
 }

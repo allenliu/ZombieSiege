@@ -18,6 +18,8 @@ public class ZombieController extends Thread {
 
     private static final int FORGET_DISTANCE = 15;
     private static final int FIREBALL_DISTANCE = 30;
+    private static final int BLOCKBREAK_DISTANCE = 30;
+    private static final int ARROW_DISTANCE = 15;
 
     private final ZombieSiegeGame game;
     private int tick = 0;
@@ -49,7 +51,7 @@ public class ZombieController extends Thread {
                 }
             }
             if (m instanceof Zombie) {
-                if (game.zombieBlockBreak) {
+                if (game.zombieBlockBreak && t != null && t.getLocation().distance(m.getLocation()) < BLOCKBREAK_DISTANCE) {
                     if ((m.hashCode() + tick) % 25 == 0) {
                         List<Block> l = m.getLineOfSight(null, 3);
                         for (Block b : l) {
@@ -59,8 +61,8 @@ public class ZombieController extends Thread {
                         }
                     }
                 }
-                if (game.zombieFireArrow) {
-                    if ((m.hashCode() + tick) % 15 == 0) {
+                if (game.zombieFireArrow && t != null && t.getLocation().distance(m.getLocation()) < ARROW_DISTANCE) {
+                    if (((m.hashCode() % 3 == 0) && (m.hashCode() + tick) % 2 == 0)) {
                         m.shootArrow();
                     }
                 }

@@ -25,7 +25,7 @@ public class ZombieSpawner extends Thread {
             return;
         }
         Location spawnCenter = game.getBase();
-        for (int i = 0; i < 10; i ++) {
+        for (int i = 0; i < 3; i ++) {
             int theta = r.nextInt(360);
             double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
             double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
@@ -34,7 +34,7 @@ public class ZombieSpawner extends Thread {
             game.getWorld().spawnCreature(spawn, CreatureType.ZOMBIE);
         }
         if (game.zombieGiant) {
-            if (r.nextDouble() > 0.3) {
+            if (r.nextDouble() < 0.5) {
                 int theta = r.nextInt(360);
                 double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
                 double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
