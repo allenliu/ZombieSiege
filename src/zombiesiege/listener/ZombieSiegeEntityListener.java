@@ -1,9 +1,11 @@
 package zombiesiege.listener;
 
+import java.util.List;
 import java.util.Random;
 
-import org.bukkit.entity.Arrow;
+import org.bukkit.Material;
 import org.bukkit.entity.CreatureType;
+import org.bukkit.entity.Giant;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -14,9 +16,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityListener;
 import org.bukkit.event.entity.EntityTargetEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.inventory.ItemStack;
 
 import zombiesiege.ZombieSiege;
 import zombiesiege.ZombieSiegeGame;
@@ -66,6 +68,16 @@ public class ZombieSiegeEntityListener extends EntityListener {
         }
         if (e.getEntity() instanceof Monster) {
             Monster m = (Monster) e.getEntity();
+            List<ItemStack> drops = e.getDrops();
+            drops.clear();
+            
+            if (m instanceof Zombie) {
+                drops.add(new ItemStack(Material.BONE, 1));
+            }
+            if (m instanceof Giant) {
+                drops.add(new ItemStack(Material.DIAMOND, 5));
+            }
+            
             EntityDamageEvent de = m.getLastDamageCause();
             if (de instanceof EntityDamageByEntityEvent) {
                 EntityDamageByEntityEvent ee = (EntityDamageByEntityEvent) de;

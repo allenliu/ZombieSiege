@@ -51,7 +51,7 @@ public class ZombieController extends Thread {
                 }
             }
             if (m instanceof Zombie) {
-                if (game.zombieBlockBreak && t != null && t.getLocation().distance(m.getLocation()) < BLOCKBREAK_DISTANCE) {
+                if (game.zombieBlockBreak && ((t != null && t.getLocation().distance(m.getLocation()) < BLOCKBREAK_DISTANCE) || m.getLocation().distance(game.getBase()) < BLOCKBREAK_DISTANCE)) {
                     if ((m.hashCode() + tick) % 25 == 0) {
                         List<Block> l = m.getLineOfSight(null, 3);
                         for (Block b : l) {

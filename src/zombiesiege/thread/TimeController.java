@@ -19,6 +19,7 @@ public class TimeController extends Thread {
         Long time = game.getWorld().getTime();
         if (!game.firstMessage && 100 < time && time < 13000L) {
             game.firstMessage = true;
+            game.disperseEquipment();
             game.sendDayMessage();
             return;
         }
@@ -36,6 +37,7 @@ public class TimeController extends Thread {
         if (!game.isDay && 100 < time && time < 13000L) {
             game.isDay = true;
             game.dayNum++;
+            game.disperseEquipment();
             game.sendDayMessage();
             return;
         }

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,9 +18,10 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
+import zombiesiege.thread.LightningSpawner;
 import zombiesiege.thread.TimeController;
 import zombiesiege.thread.ZombieController;
 import zombiesiege.thread.ZombieSpawner;
@@ -42,6 +44,7 @@ public class ZombieSiegeGame {
     private final Map<String, Integer> playerKills = new HashMap<String, Integer>();
     private final Map<String, Integer> playerDeaths = new HashMap<String, Integer>();
     public List<Monster> horde = new ArrayList<Monster>();
+    private int timeControllerId;
 
 
     public boolean isDay = true;
@@ -65,7 +68,8 @@ public class ZombieSiegeGame {
 
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieSpawner(this), 0, 400L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieController(this), 0, 20L);
-        instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
+        timeControllerId = instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
+        instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new LightningSpawner(this), 0, 200L);
 
         sendWelcomeMessage();
     }
@@ -80,6 +84,19 @@ public class ZombieSiegeGame {
         }
     }
 
+    public void winGame() {
+        
+    }
+    
+    public void loseGame() {
+        instance.getServer().getScheduler().cancelTask(timeControllerId);
+        sendMessageToAll(ChatColor.DARK_RED + "D E F E A T !");
+        for (Player p : world.getPlayers()) {
+            world.strikeLightning(p.getLocation());
+            p.damage(1000);
+        }
+    }
+    
     public World getWorld() {
         return world;
     }
@@ -91,7 +108,9 @@ public class ZombieSiegeGame {
     private void setupWorld() {
         world.setSpawnFlags(true, true);
         world.setPVP(true);
+        world.setDifficulty(Difficulty.EASY);
         world.setTime(0L);
+        world.setStorm(false);
         world.setSpawnLocation(base.getBlockX(), base.getBlockY(), base.getBlockZ());
         for (Entity entity : world.getEntities()) {
             if ((entity instanceof Monster) || (entity instanceof Projectile)) {
@@ -132,28 +151,31 @@ public class ZombieSiegeGame {
     public void sendWelcomeMessage() {
         sendMessageToAll(ChatColor.DARK_GREEN + "Z O M B I E  " + ChatColor.DARK_AQUA + "S I E G E  " + ChatColor.DARK_BLUE + "1.0");
         sendMessageToAll("Survive five nights of zombie mayhem!");
-        sendMessageToAll("You each get one (maybe not so useful) tool to start with!");
-        sendMessageToAll("You have until nightfall to prepare yourselves.");
+        sendMessageToAll("Protect the spawn point from zombies.");
+        sendMessageToAll("You each get one tool and piece of armor to start with!");
     }
 
     public void sendDayMessage() {
         switch (dayNum) {
         case 0:
-            sendMessageToAll("Dawn of day 0:");
-            sendMessageToAll("Start a mine, build a wall, farm for food.");
+            sendMessageToAll(ChatColor.AQUA + "Dawn of First Day");
+            sendMessageToAll("You have been supplied with a slice of watermelon and an egg. Zombies begin spawning at nightfall.");
             break;
         case 1:
-            sendMessageToAll("Dawn of day 1:");
-            sendMessageToAll("");
+            sendMessageToAll(ChatColor.AQUA + "Dawn of Second Day");
+            sendMessageToAll("You have been supplied with a golden apple and spider webs.");
             break;
         case 2:
-            sendMessageToAll("Dawn of day 2:");
+            sendMessageToAll(ChatColor.AQUA + "Dawn of Third Day");
+            sendMessageToAll("You have been supplied with cake and brick blocks.");
             break;
         case 3:
-            sendMessageToAll("Dawn of day 3:");
+            sendMessageToAll(ChatColor.AQUA + "Dawn of Fourth Day");
+            sendMessageToAll("You have been supplied with bows and arrows.");
             break;
         case 4:
-            sendMessageToAll("Dawn of last day:");
+            sendMessageToAll(ChatColor.AQUA + "Dawn of Last Day");
+            sendMessageToAll("You have been supplied with TNT and more arrows.");
             break;
         }
     }
@@ -161,35 +183,48 @@ public class ZombieSiegeGame {
     public void sendNightMessage() {
         switch (dayNum) {
         case 0:
-            sendMessageToAll("Dusk of day 0:");
+            sendMessageToAll(ChatColor.DARK_PURPLE + "Dusk of First Day");
             sendMessageToAll("There are reports of an unusually high number of zombies about.");
             break;
         case 1:
-            sendMessageToAll("Dusk of day 1:");
+            sendMessageToAll(ChatColor.DARK_PURPLE + "Dusk of Second Day");
             sendMessageToAll("The zombies are becoming more aggressive!");
             break;
         case 2:
-            sendMessageToAll("Dusk of day 2:");
+            sendMessageToAll(ChatColor.DARK_PURPLE + "Dusk of Third Day");
             sendMessageToAll("Run for cover! The zombies seem to have brought weapons of their own!");
             break;
         case 3:
-            sendMessageToAll("Dusk of day 3:");
+            sendMessageToAll(ChatColor.DARK_PURPLE + "Dusk of Fourth Day");
             sendMessageToAll("Something in the water seems to be making the zombies more volatile...");
             break;
         case 4:
-            sendMessageToAll("Dusk of last day:");
+            sendMessageToAll(ChatColor.DARK_PURPLE + "Dusk of Last Day");
             sendMessageToAll("Be very, very afraid.");
             break;
         }
     }
 
     public void sendStats(CommandSender s) {
-        s.sendMessage(ChatColor.LIGHT_PURPLE + padRight("Statistics", 15) + padRight("Kills", 10) + "Deaths");
+        s.sendMessage(ChatColor.LIGHT_PURPLE + padRight("Player", 15) + padRight("Kills", 10) + "Deaths");
         List<Player> l = world.getPlayers();
         Collections.sort(l, playerComparator);
         for (Player p : l) {
             String name = p.getName();
-            s.sendMessage(padRight(name, 15) + padRight(playerKills.get(name).toString(), 10) + playerDeaths.get(name));
+            int kills, deaths;
+            if (playerKills.containsKey(name)) {
+                kills = playerKills.get(name);
+            } else {
+                kills = 0;
+                playerKills.put(name, 0);
+            }
+            if (playerDeaths.containsKey(name)) {
+                deaths = playerDeaths.get(name);
+            } else {
+                deaths = 0;
+                playerDeaths.put(name, 0);
+            }
+            s.sendMessage(padRight(name, 15) + padRight("" + kills, 10) + deaths);
         }
     }
 
@@ -212,6 +247,31 @@ public class ZombieSiegeGame {
         }
     }
 
+    public void disperseEquipment() {
+        switch (dayNum) {
+        case 0:
+            world.dropItem(base, new ItemStack(Material.MELON, 1));
+            world.dropItem(base, new ItemStack(Material.EGG, 1));
+            break;
+        case 1:
+            world.dropItem(base, new ItemStack(Material.GOLDEN_APPLE, 1));
+            world.dropItem(base, new ItemStack(Material.WEB, 5));
+            break;
+        case 2:
+            world.dropItem(base, new ItemStack(Material.BRICK, 10));
+            world.dropItem(base, new ItemStack(Material.CAKE, 1));
+            break;
+        case 3:
+            world.dropItem(base, new ItemStack(Material.BOW, 2));
+            world.dropItem(base, new ItemStack(Material.ARROW, 64));
+            break;
+        case 4:
+            world.dropItem(base, new ItemStack(Material.TNT, 5));
+            world.dropItem(base, new ItemStack(Material.ARROW, 64));
+            break;
+        }
+    }
+    
     public void addKill(Player p) {
         String name = p.getName();
         if (playerKills.containsKey(name)) {
@@ -231,9 +291,28 @@ public class ZombieSiegeGame {
     }
 
     private void equip(Player p) {
-        Inventory i = p.getInventory();
+        PlayerInventory i = p.getInventory();
         i.clear();
+        i.setHelmet(null);
+        i.setChestplate(null);
+        i.setLeggings(null);
+        i.setBoots(null);
+        
         p.setItemInHand(new ItemStack(EQUIPABLES[r.nextInt(EQUIPABLES.length)], 1));
+        switch (r.nextInt(4)) {
+        case 0:
+            p.getInventory().setHelmet(new ItemStack(Material.DIAMOND_HELMET, 1));
+            break;
+        case 1:
+            p.getInventory().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE, 1));
+            break;
+        case 2:
+            p.getInventory().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS, 1));
+            break;
+        case 3:
+            p.getInventory().setBoots(new ItemStack(Material.DIAMOND_BOOTS, 1));
+            break;
+        }
     }
 
     private static String padRight(String s, int n) {
@@ -248,21 +327,47 @@ public class ZombieSiegeGame {
 
         @Override
         public int compare(Player p1, Player p2) {
-            int p1kills;
-            int p2kills;
-            if (playerKills.containsKey(p1)) {
-                p1kills = playerKills.get(p1);
+            int p1kills, p2kills, p1deaths, p2deaths;
+            if (playerKills.containsKey(p1.getName())) {
+                p1kills = playerKills.get(p1.getName());
             } else {
                 p1kills = 0;
                 playerKills.put(p1.getName(), 0);
             }
-            if (playerKills.containsKey(p2)) {
-                p2kills = playerKills.get(p2);
+            if (playerKills.containsKey(p2.getName())) {
+                p2kills = playerKills.get(p2.getName());
             } else {
                 p2kills = 0;
                 playerKills.put(p2.getName(), 0);
             }
-            return p1kills - p2kills;
+            if (playerDeaths.containsKey(p1.getName())) {
+                p1deaths = playerDeaths.get(p1.getName());
+            } else {
+                p1deaths = 0;
+                playerDeaths.put(p1.getName(), 0);
+            }
+            if (playerDeaths.containsKey(p2.getName())) {
+                p2deaths = playerDeaths.get(p2.getName());
+            } else {
+                p2deaths = 0;
+                playerDeaths.put(p2.getName(), 0);
+            }
+            double p1ratio, p2ratio;
+            if (p1kills == 0) {
+                p1ratio = 0;
+            } else if (p1deaths == 0) {
+                p1ratio = 1;
+            } else {
+                p1ratio = (double) p1kills / p1deaths;
+            }
+            if (p2kills == 0) {
+                p2ratio = 0;
+            } else if (p2deaths == 0) {
+                p2ratio = 1;
+            } else {
+                p2ratio = (double) p2kills / p2deaths;
+            }       
+            return Double.compare(p1ratio, p2ratio);
         }
     }
 }

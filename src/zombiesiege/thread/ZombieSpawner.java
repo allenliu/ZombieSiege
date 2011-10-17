@@ -3,7 +3,6 @@ package zombiesiege.thread;
 import java.util.Random;
 
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.CreatureType;
 
 import zombiesiege.ZombieSiegeGame;
@@ -34,7 +33,7 @@ public class ZombieSpawner extends Thread {
             game.getWorld().spawnCreature(spawn, CreatureType.ZOMBIE);
         }
         if (game.zombieGiant) {
-            if (r.nextDouble() < 0.5) {
+            if (r.nextDouble() < 0.6) {
                 int theta = r.nextInt(360);
                 double x = spawnCenter.getX() + SPAWN_RADIUS * Math.cos(Math.toRadians(theta));
                 double z = spawnCenter.getZ() + SPAWN_RADIUS * Math.sin(Math.toRadians(theta));
