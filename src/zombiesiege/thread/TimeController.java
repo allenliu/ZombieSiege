@@ -30,6 +30,7 @@ public class TimeController extends Thread {
                     entity.remove();
                 }
             }
+            game.horde.clear();
             game.enableZombieBehavior();
             game.sendNightMessage();
             return;

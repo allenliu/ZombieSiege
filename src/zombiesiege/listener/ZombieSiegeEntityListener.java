@@ -82,7 +82,20 @@ public class ZombieSiegeEntityListener extends EntityListener {
             if (de instanceof EntityDamageByEntityEvent) {
                 EntityDamageByEntityEvent ee = (EntityDamageByEntityEvent) de;
                 if (ee.getDamager() instanceof Player) {
-                    game.addKill((Player) ee.getDamager());
+                    Player p = (Player) ee.getDamager();
+                    game.addKill(p);
+                    if (m instanceof Giant) {
+                        game.sendMessageToAll(p.getName() + " has slain a giant zombie!");
+                    }
+                } else if (ee.getDamager() instanceof Projectile) {
+                    Projectile proj = (Projectile) ee.getDamager();
+                    if (proj.getShooter() instanceof Player) {
+                        Player p = (Player) proj.getShooter();
+                        game.addKill(p);
+                        if (m instanceof Giant) {
+                            game.sendMessageToAll(p.getName() + " has slain a giant zombie!");
+                        }
+                    }
                 }
             }
             game.unregisterMonster(m);
@@ -104,6 +117,9 @@ public class ZombieSiegeEntityListener extends EntityListener {
         ZombieSiegeGame game = instance.getGame();
         if (game == null) {
             return;
+        }
+        if ((e.getEntity() instanceof Monster) && (e.getCause() == DamageCause.FIRE || e.getCause() == DamageCause.LAVA)) {
+            e.setDamage(1);
         }
         if (e instanceof EntityDamageByEntityEvent) {
             EntityDamageByEntityEvent ee = (EntityDamageByEntityEvent) e;

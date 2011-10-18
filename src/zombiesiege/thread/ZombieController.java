@@ -1,6 +1,7 @@
 package zombiesiege.thread;
 
 import java.util.List;
+import java.util.Random;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -22,6 +23,7 @@ public class ZombieController extends Thread {
     private static final int ARROW_DISTANCE = 15;
 
     private final ZombieSiegeGame game;
+    private final Random r = new Random();
     private int tick = 0;
 
     public ZombieController(ZombieSiegeGame game) {
@@ -32,6 +34,10 @@ public class ZombieController extends Thread {
     public void run() {
         tick++;
         for (Monster m : game.horde) {
+            if (m.getLocation().distance(game.getBase()) < 3) {
+                game.loseGame();
+                return;
+            }
             LivingEntity t = m.getTarget();
             if (t == null) {
                 Vector v = game.getBase().toVector().subtract(m.getLocation().toVector());
@@ -41,6 +47,12 @@ public class ZombieController extends Thread {
                 m.setVelocity(v.normalize().multiply(0.4));
             }
             if (m instanceof Giant) {
+                if (game.isDay) {
+                    game.getWorld().createExplosion(m.getLocation(), 12F, true);
+                    m.damage(9999);
+                    game.horde.remove(m);
+                    continue;
+                }
                 if (t != null && t.getLocation().distance(m.getLocation()) < FIREBALL_DISTANCE) {
                     if ((m.hashCode() + tick) % 5 == 0) {
                         Location from = m.getEyeLocation().add(0, 8, 0);
@@ -52,11 +64,22 @@ public class ZombieController extends Thread {
             }
             if (m instanceof Zombie) {
                 if (game.zombieBlockBreak && ((t != null && t.getLocation().distance(m.getLocation()) < BLOCKBREAK_DISTANCE) || m.getLocation().distance(game.getBase()) < BLOCKBREAK_DISTANCE)) {
-                    if ((m.hashCode() + tick) % 25 == 0) {
-                        List<Block> l = m.getLineOfSight(null, 3);
+                    if ((m.hashCode() + tick) % 20 == 0) {
+                        List<Block> l = m.getLineOfSight(null, 4);
                         for (Block b : l) {
-                            if (b.getType() != Material.OBSIDIAN && b.getType() != Material.BRICK) {
-                                b.setType(Material.AIR);
+                            if (b.getType() == Material.AIR) {
+                                continue;
+                            }
+                            if (b.getType() == Material.OBSIDIAN) {
+                                if (r.nextDouble() < 0.05) {
+                                    b.setType(Material.AIR);
+                                }
+                                break;
+                            } else if (b.getType() == Material.BRICK) {
+                                if (r.nextDouble() < 0.1) {
+                                    b.setType(Material.AIR);
+                                }
+                                break;
                             }
                         }
                     }

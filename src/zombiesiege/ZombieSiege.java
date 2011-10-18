@@ -7,6 +7,7 @@ import org.bukkit.event.Event;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import zombiesiege.listener.ZombieSiegeBlockListener;
 import zombiesiege.listener.ZombieSiegeCommandExecutor;
 import zombiesiege.listener.ZombieSiegeEntityListener;
 import zombiesiege.listener.ZombieSiegePlayerListener;
@@ -19,7 +20,7 @@ public class ZombieSiege extends JavaPlugin {
     private final ZombieSiegeCommandExecutor commandExecutor = new ZombieSiegeCommandExecutor(this);
     private final ZombieSiegePlayerListener playerListener = new ZombieSiegePlayerListener(this);
     private final ZombieSiegeEntityListener entityListener = new ZombieSiegeEntityListener(this);
-    //private final ZombieSiegeBlockListener blockListener = new ZombieSiegeBlockListener(this);
+    private final ZombieSiegeBlockListener blockListener = new ZombieSiegeBlockListener(this);
     private final ZombieSiegeWorldListener worldListener = new ZombieSiegeWorldListener(this);
     
     private ZombieSiegeGame game;
@@ -50,6 +51,7 @@ public class ZombieSiege extends JavaPlugin {
         pluginManager.registerEvent(Event.Type.ENTITY_DEATH, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_TARGET, entityListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.ENTITY_DAMAGE, entityListener, Event.Priority.Normal, this);
+        pluginManager.registerEvent(Event.Type.BLOCK_CANBUILD, blockListener, Event.Priority.Normal, this);
         pluginManager.registerEvent(Event.Type.CHUNK_UNLOAD, worldListener, Event.Priority.Normal, this);
     }
     
@@ -63,7 +65,9 @@ public class ZombieSiege extends JavaPlugin {
     
     public void endGame(Player p) {
         if (game == null) {
-            p.sendMessage("There is no game in session.");
+            if (p != null) {
+                p.sendMessage("There is no game in session.");
+            }
         } else {
             game.endGame();
             game = null;

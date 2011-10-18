@@ -1,12 +1,13 @@
 package zombiesiege;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Difficulty;
@@ -43,13 +44,12 @@ public class ZombieSiegeGame {
     private final Location base;
     private final Map<String, Integer> playerKills = new HashMap<String, Integer>();
     private final Map<String, Integer> playerDeaths = new HashMap<String, Integer>();
-    public List<Monster> horde = new ArrayList<Monster>();
-    private int timeControllerId;
-
+    public Set<Monster> horde = new CopyOnWriteArraySet<Monster>();
 
     public boolean isDay = true;
     public int dayNum = 0;
     public boolean firstMessage = false;
+    private Material originalMaterial;
 
     public boolean zombieBlockBreak = false;
     public boolean zombieFireArrow = false;
@@ -68,7 +68,7 @@ public class ZombieSiegeGame {
 
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieSpawner(this), 0, 400L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new ZombieController(this), 0, 20L);
-        timeControllerId = instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
+        instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new TimeController(this), 0, 200L);
         instance.getServer().getScheduler().scheduleSyncRepeatingTask(instance, new LightningSpawner(this), 0, 200L);
 
         sendWelcomeMessage();
@@ -76,25 +76,32 @@ public class ZombieSiegeGame {
 
     public void endGame() {
         sendMessageToAll("The current ZombieSiege session has been ended.");
-        instance.getServer().getScheduler().cancelAllTasks();
+        instance.getServer().getScheduler().cancelTasks(instance);
         for (Entity entity : world.getEntities()) {
             if ((entity instanceof Monster) || (entity instanceof Projectile)) {
                 entity.remove();
             }
         }
+        resetBase();
     }
 
     public void winGame() {
-        
+        sendMessageToAll(ChatColor.GREEN + "V I C T O R Y !");
+        for (Player p : world.getPlayers()) {
+            sendStats(p);
+        }
+        sendMessageToAll("Continue playing for infinite mode.");
     }
     
     public void loseGame() {
-        instance.getServer().getScheduler().cancelTask(timeControllerId);
         sendMessageToAll(ChatColor.DARK_RED + "D E F E A T !");
+        sendMessageToAll("A zombie reached the spawn point!");
         for (Player p : world.getPlayers()) {
+            sendStats(p);
             world.strikeLightning(p.getLocation());
             p.damage(1000);
         }
+        instance.getServer().getScheduler().cancelTasks(instance);
     }
     
     public World getWorld() {
@@ -120,9 +127,14 @@ public class ZombieSiegeGame {
     }
 
     private void setupBase() {
-        base.add(new Location(world, 0, -1, 0)).getBlock().setType(Material.OBSIDIAN);
+        originalMaterial = base.add(new Location(world, 0, -1, 0)).getBlock().getType();
+        base.getBlock().setType(Material.BEDROCK);
     }
 
+    private void resetBase() {
+        base.add(new Location(world, 0, -1, 0)).getBlock().setType(originalMaterial);
+    }
+    
     private void setupPlayers() {
         for (Player p : world.getPlayers()) {
             p.leaveVehicle();
@@ -177,6 +189,9 @@ public class ZombieSiegeGame {
             sendMessageToAll(ChatColor.AQUA + "Dawn of Last Day");
             sendMessageToAll("You have been supplied with TNT and more arrows.");
             break;
+        case 5:
+            winGame();          
+            break;
         }
     }
 
@@ -226,6 +241,7 @@ public class ZombieSiegeGame {
             }
             s.sendMessage(padRight(name, 15) + padRight("" + kills, 10) + deaths);
         }
+        s.sendMessage(ChatColor.LIGHT_PURPLE + "========================");
     }
 
     public void enableZombieBehavior() {
@@ -317,10 +333,6 @@ public class ZombieSiegeGame {
 
     private static String padRight(String s, int n) {
         return String.format("%1$-" + n + "s", s);  
-    }
-
-    private static String padLeft(String s, int n) {
-        return String.format("%1$#" + n + "s", s);  
     }
     
     public final class PlayerComparator implements Comparator<Player> {
